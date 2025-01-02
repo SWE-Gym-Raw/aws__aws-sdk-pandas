@@ -61,7 +61,7 @@ class _BlockFileDatasink(Datasink):
     ) -> Any:
         _write_block_to_file = self.write_block
 
-        def _write_block(write_path: str, block: pd.DataFrame) -> str:
+        def _write_block(write_path: str, block: pd.DataFrame) -> None:
             with open_s3_object(
                 path=write_path,
                 **self.open_s3_object_args,
@@ -91,12 +91,10 @@ class _BlockFileDatasink(Datasink):
     # and is meant to be used for singular actions like
     # [committing a transaction](https://docs.ray.io/en/latest/data/api/doc/ray.data.Datasource.html).
     # As deceptive as it may look, there is no race condition here.
-    def on_write_complete(self, write_results: list[Any], **_: Any) -> None:
+    def on_write_complete(self, write_result_blocks: list[Any]) -> None:
         """Execute callback after all write tasks complete."""
-        _logger.debug("Write complete %s.", write_results)
-
-        # Collect and return all write task paths
-        self._write_paths.extend(write_results)
+        write_paths = [result["write_result"].iloc[0] for result in write_result_blocks]
+        self._write_paths.extend(write_paths)
 
     def get_write_paths(self) -> list[str]:
         """Return S3 paths of where the results have been written."""

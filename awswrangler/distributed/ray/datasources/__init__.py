@@ -1,5 +1,7 @@
 """Ray Datasources Module."""
 
+import ray
+
 from awswrangler.distributed.ray.datasources.arrow_csv_datasink import ArrowCSVDatasink
 from awswrangler.distributed.ray.datasources.arrow_csv_datasource import ArrowCSVDatasource
 from awswrangler.distributed.ray.datasources.arrow_json_datasource import ArrowJSONDatasource
@@ -15,6 +17,12 @@ from awswrangler.distributed.ray.datasources.pandas_text_datasource import (
     PandasFWFDataSource,
     PandasJSONDatasource,
     PandasTextDatasource,
+)
+from awswrangler.distributed.ray.datasources.write_result import (
+    WriteResult,
+    gen_datasink_write_result,
+    generate_collect_write_stats_fn,
+    generate_write_fn,
 )
 
 __all__ = [
@@ -34,3 +42,10 @@ __all__ = [
     "PandasJSONDatasink",
     "_BlockFileDatasink",
 ]
+
+
+# Monkeypatch ray methods to return write results
+ray.data._internal.planner.plan_write_op.gen_datasink_write_result = gen_datasink_write_result  # type: ignore[attr-defined]
+ray.data._internal.planner.plan_write_op.generate_write_fn = generate_write_fn  # type: ignore[attr-defined]
+ray.data._internal.planner.plan_write_op.generate_collect_write_stats_fn = generate_collect_write_stats_fn  # type: ignore[attr-defined]
+ray.data.datasource.datasink.WriteResult = WriteResult
